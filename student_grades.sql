@@ -21,7 +21,7 @@ CREATE TABLE grades(
 	grade_id SERIAL PRIMARY KEY,
 	student_id INTEGER NOT NULL REFERENCES students(student_id),
 	course_id INTEGER NOT NULL REFERENCES courses(course_id),
-	grade INTEGER NOT NULL CHECK (grade BETWEEN 0 AND 100),
+	grade NUMERIC(5, 2) NOT NULL CHECK (grade BETWEEN 0 AND 100),
 	UNIQUE (student_id, course_id)
 );
 

@@ -1,12 +1,23 @@
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationInfo, field_validator
+from typing import ClassVar
 
-class StudentCreate(BaseModel):
+class NoNullUpdate(BaseModel):
+    non_nullable: ClassVar[set[str]] = set()
+
+    @field_validator("*")
+    @classmethod
+    def reject_explicit_null(cls, value, info: ValidationInfo):
+        if value is None and info.field_name in cls.non_nullable:
+            raise ValueError(f"{info.field_name} cannot be null")
+        return value
+    
+class StudentCreate(NoNullUpdate):
     full_name: str
     email: EmailStr
     birth_date: date | None = None
 
-class StudentUpdate(BaseModel):
+class StudentUpdate(NoNullUpdate):
     full_name: str | None = None
     email: EmailStr | None = None
     birth_date: date | None = None
@@ -24,7 +35,7 @@ class CourseCreate(BaseModel):
     instructor_name: str
     credits: int = Field(gt=0)
 
-class CourseUpdate(BaseModel):
+class CourseUpdate(NoNullUpdate):
     course_name: str | None = None
     instructor_name: str | None = None
     credits: int | None = Field(default=None,gt=0)
@@ -41,8 +52,8 @@ class GradeCreate(BaseModel):
     course_id: int
     grade: float = Field(ge=0, le=100)
 
-class GradeUpdate(BaseModel):
-    grade: float | None = Field(ge=0, le=100)
+class GradeUpdate(NoNullUpdate):
+    grade: float | None = Field(default=None, ge=0, le=100)
 
 class GradeOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

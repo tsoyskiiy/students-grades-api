@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 from database import get_db
 from models import Course, Grade, Student
@@ -19,7 +20,11 @@ def create_student(payload: StudentCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="Email already exists")
     student = Student(**payload.model_dump())
     db.add(student)
-    db.commit()
+    try:
+            db.commit()
+    except IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Conflict with existing data")
     db.refresh(student)
     return student
 
@@ -64,7 +69,11 @@ def update_student(
             raise HTTPException(status_code=409, detail="Email already exists")
     for key, value in data.items():
         setattr(student, key, value)
-    db.commit()
+    try:
+            db.commit()
+    except IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Conflict with existing data")
     db.refresh(student)
     return student
 
@@ -76,7 +85,11 @@ def delete_student(student_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Student not found")
     db.query(Grade).filter(Grade.student_id == student_id).delete()
     db.delete(student)
-    db.commit()
+    try: 
+            db.commit()
+    except IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Conflict with existing data")
     return Response(status_code=204)
 
 
@@ -84,7 +97,11 @@ def delete_student(student_id: int, db: Session = Depends(get_db)):
 def create_course(payload: CourseCreate, db: Session = Depends(get_db)):
     course = Course(**payload.model_dump())
     db.add(course)
-    db.commit()
+    try: 
+            db.commit()
+    except IntegrityError:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Conflict with existing data")
     db.refresh(course)
     return course
 
@@ -114,7 +131,11 @@ def update_course(course_id: int, payload: CourseUpdate, db: Session = Depends(g
     data = payload.model_dump(exclude_unset=True)
     for key, value in data.items():
         setattr(course, key, value)
-    db.commit()
+    try: 
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Conflict with existing data")
     db.refresh(course)
     return course
 
@@ -150,7 +171,11 @@ def create_grade(payload: GradeCreate, db: Session = Depends(get_db)):
          )
     grade = Grade(**payload.model_dump())
     db.add(grade)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409,detail="Conflict with existing data")
     db.refresh(grade)
     return grade
 
@@ -170,7 +195,9 @@ def update_grade(grade_id: int, payload: GradeUpdate, db: Session = Depends(get_
     row = db.get(Grade, grade_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Grade not found")
-    row.grade = payload.grade
+    data = payload.model_dump(exclude_unset=True)
+    for key, value in data.items():
+        setattr(row, key, value)
     db.commit()
     db.refresh(row)
     return row
