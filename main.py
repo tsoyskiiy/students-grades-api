@@ -195,8 +195,7 @@ def update_grade(grade_id: int, payload: GradeUpdate, db: Session = Depends(get_
     row = db.get(Grade, grade_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Grade not found")
-    data = payload.model_dump(exclude_unset=True)
-    for key, value in data.items():
+    for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(row, key, value)
     db.commit()
     db.refresh(row)

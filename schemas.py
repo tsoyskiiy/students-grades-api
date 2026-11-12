@@ -2,24 +2,14 @@ from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationInfo, field_validator
 from typing import ClassVar
 
-class NoNullUpdate(BaseModel):
-    non_nullable: ClassVar[set[str]] = set()
-
-    @field_validator("*")
-    @classmethod
-    def reject_explicit_null(cls, value, info: ValidationInfo):
-        if value is None and info.field_name in cls.non_nullable:
-            raise ValueError(f"{info.field_name} cannot be null")
-        return value
-    
-class StudentCreate(NoNullUpdate):
-    full_name: str
+class StudentCreate(BaseModel):
+    full_name: str = Field(min_length=1)
     email: EmailStr
     birth_date: date | None = None
 
-class StudentUpdate(NoNullUpdate):
-    full_name: str | None = None
-    email: EmailStr | None = None
+class StudentUpdate(BaseModel):
+    full_name: str = Field(default=None, min_length=1)
+    email: EmailStr = None
     birth_date: date | None = None
 
 class StudentOut(BaseModel):
@@ -31,14 +21,14 @@ class StudentOut(BaseModel):
     enrollment_date: date
 
 class CourseCreate(BaseModel):
-    course_name: str
-    instructor_name: str
+    course_name: str = Field(min_length=1)
+    instructor_name: str = Field(min_length=1)
     credits: int = Field(gt=0)
 
-class CourseUpdate(NoNullUpdate):
-    course_name: str | None = None
-    instructor_name: str | None = None
-    credits: int | None = Field(default=None,gt=0)
+class CourseUpdate(BaseModel):
+    course_name: str = Field(default=None, min_length=1)
+    instructor_name: str = Field(default=None, min_length=1)
+    credits: int = Field(default=None, gt=0)
 
 class CourseOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -52,8 +42,8 @@ class GradeCreate(BaseModel):
     course_id: int
     grade: float = Field(ge=0, le=100)
 
-class GradeUpdate(NoNullUpdate):
-    grade: float | None = Field(default=None, ge=0, le=100)
+class GradeUpdate(BaseModel):
+    grade: float = Field(default=None, ge=0, le=100)
 
 class GradeOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
