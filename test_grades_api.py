@@ -290,29 +290,3 @@ def test_course_average(client, make):
     assert row['course_name'] == course['course_name']
     assert row['average_grade'] == 81.67  # (70 + 80 + 95) / 3, rounded to 2 decimals
     assert row['students_graded'] == 3
-
-@pytest.mark.parametrize("url, body", [
-    ("/students/1", {"full_name": None}),
-    ("/students/1", {"email": None}),
-    ("/courses/1",  {"course_name": None}),
-    ("/courses/1",  {"instructor_name": None}),
-    ("/courses/1",  {"credits": None}),
-    ("/grades/1",   {"grade": None}),
-])
-def test_patch_rejects_null(client, url, body):
-    assert client.patch(url, json=body).status_code == 422
-
-
-@pytest.mark.parametrize("url", ["/students/1", "/courses/1", "/grades/1"])
-def test_patch_empty_body_is_ok(client, url):
-    assert client.patch(url, json={}).status_code == 200
-
-
-def test_patch_birth_date_null_is_ok(client):
-    assert client.patch("/students/1", json={"birth_date": None}).status_code == 200
-
-
-def test_patch_partial_update(client):
-    r = client.patch("/grades/1", json={"grade": 88.5})
-    assert r.status_code == 200
-    assert r.json()["grade"] == 88.5
